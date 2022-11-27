@@ -15,15 +15,15 @@ public class PlayerAttack : MonoBehaviour
     {
         _player = player;
     }
-    private void Update()
-    {
-        if (_player != null)
-        {
-            gameObject.transform.position =
-               Vector3.MoveTowards(transform.position, _player.transform.position, 4 * Time.deltaTime);
+    //private void Update()
+    //{
+    //    if (_player != null)
+    //    {
+    //        gameObject.transform.position =
+    //           Vector3.MoveTowards(transform.position, _player.transform.position, 4 * Time.deltaTime);
             
-        }     
-    }
+    //    }     
+    //}
     private void OnTriggerExit(Collider other)
     {
         if (other.tag.Equals("PlayerBullet"))

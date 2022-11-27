@@ -3,24 +3,47 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(CapsuleCollider))]
 public class PlayerScript : MonoBehaviour
 {
     [SerializeField] private GameObject enemy;
     public bool key;
     public bool xp;
-    public float speed = 10f;
-    public float Hspeed = 10f;
+    public float Speed = 0.3f;
+    public float JumpForce = 0.5f;
+
+    public LayerMask GroundLayer = 1;
+
+    private Rigidbody _rb;
+    private CapsuleCollider _collider;
+
+    private bool IsGrounded
+    {
+        get
+        {
+            var bottomCenterPoint = new Vector3(_collider.bounds.center.x, _collider.bounds.min.y, _collider.bounds.center.z);
+            return Physics.CheckCapsule(_collider.bounds.center, bottomCenterPoint, _collider.bounds.size.x / 2 * 0.9f, GroundLayer);
+        }
+    }
+    private Vector3 _movementVector
+    {
+        get
+        {
+            var horizontal = Input.GetAxis("Horizontal");
+            var vertical = Input.GetAxis("Vertical");
+            return new Vector3(horizontal, 0.0f, vertical);
+        }
+    }
     void Start()
     {
-        //Vector3 posinion = gameObject.transform.position;       
-        //узанём дистанцию от игрока до врага :
-        //float distance = Vector3.Distance(gameObject.transform.position, enemy.transform.position);
-        //Debug.Log(distance);
+        _rb = GetComponent<Rigidbody>();
+        _collider = GetComponent<CapsuleCollider>();
 
-        //тупорылое вращение, которое не работает
-        //Vector3 direction = enemy.transform.position - transform.position;
-        //Quaternion rotation = Quaternion.LookRotation(direction);
-        //transform.rotation = rotation;       
+        _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        if (GroundLayer == gameObject.layer)
+            //Слой сортировки игроков должен отличаться от слоя сортировки земли
+            Debug.LogError("Player SortingLayer must be different from Ground SourtingLayer");
     }
  
 
@@ -40,49 +63,22 @@ public class PlayerScript : MonoBehaviour
             hitColor = Color.green;
         }
         Debug.DrawLine(playerPositin, enemyPosition, hitColor);
+        JumpLogic();
+        MoveLogic();
     }
-    void Update()
+    private void MoveLogic()
     {
-        //Передвижение игрока по оси X :
-        //if(Input.GetKey(KeyCode.W))
-        // {
-        //     Vector3 posinion = gameObject.transform.position;
-        //     posinion.x += 0.01f;
-        //     gameObject.transform.position = posinion;
-        // }
-        if (Input.GetKey(KeyCode.W))
-        {
-            gameObject.transform.Translate(Vector3.forward * Time.deltaTime * speed);
-        }
-        if (Input.GetKey(KeyCode.S))
-        {
-            gameObject.transform.Translate(Vector3.back * Time.deltaTime * speed);
-        }
-        if (Input.GetKey(KeyCode.A))
-        {
-            transform.Rotate(Vector3.up * Time.deltaTime * -Hspeed);
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            transform.Rotate(Vector3.up * Time.deltaTime  * Hspeed);
-        }
-        //if(Input.GetKeyDown(KeyCode.Space) && ground) 
-        //{
-        //    ground = false;
-        //    GetComponent<Rigidbody>().AddForce(new Vector3(0, 300, 0));
-        //}
-
-        //if (Input.GetKey(KeyCode.W))
-        //{
-        //    gameObject.transform.position =
-        //        Vector3.MoveTowards(transform.position, enemy.transform.position, 2 * Time.deltaTime);
-        //}
-
-        //Вращение игрока :
-        // transform.Rotate(Vector3.up * Time.deltaTime);
-
-        //transform.LookAt(enemy.transform);
+        _rb.AddForce(_movementVector * Speed, ForceMode.Impulse);
     }
+
+    private void JumpLogic()
+    {
+        if (IsGrounded && (Input.GetAxis("Jump") > 0))
+        {
+            _rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+        }
+    }
+  
    
     //Столкновения объектов :
     private void OnTriggerEnter(Collider other)
@@ -120,10 +116,4 @@ public class PlayerScript : MonoBehaviour
             other.gameObject.SetActive(false);
         }
     }
-
-    //private void OnCollisionEnter(Collision other)
-    //{
-    //    if(other.tag.E)
-    //    Debug.Log("Yit");
-    //}
 }
